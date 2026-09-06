@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.egg-info/
+.pytest_cache/
+.DS_Store
+*.log
+.aws-sam/
+.mypy_cache/
+
+# local screenshots used for chat/debugging - never commit (may contain account IDs, tokens)
+/ss*.png
