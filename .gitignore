@@ -9,6 +9,3 @@ venv/
 *.log
 .aws-sam/
 .mypy_cache/
-
-# local screenshots used for chat/debugging - never commit (may contain account IDs, tokens)
-/ss*.png
