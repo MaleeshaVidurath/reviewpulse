@@ -9,3 +9,6 @@ venv/
 *.log
 .aws-sam/
 .mypy_cache/
+
+# local SQLite dev store, fixture-derived, never needed in the repo
+data/
