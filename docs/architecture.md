@@ -1,11 +1,14 @@
 # ReviewPulse — Architecture
 
-> **Status:** the full designed pipeline is built as of 2026-09-12 (ingest →
-> dedupe → triage → cluster → ticket sync → crisis detection), verified
-> end-to-end against real AWS Bedrock and a real Jira Cloud project. Only
-> AWS deployment (EventBridge + AgentCore Runtime) remains. The final
-> polished diagram for submission will be exported as
-> `docs/architecture.png`.
+> **Status:** the full designed pipeline is built (ingest → dedupe → triage
+> → cluster → ticket sync → crisis detection), verified end-to-end against
+> real AWS Bedrock and a real Jira Cloud project. As of 2026-09-13, it is
+> also deployed on **AWS Bedrock AgentCore Runtime** — one pipeline tick
+> invoked and verified running on real managed AWS infrastructure, not a
+> local machine. EventBridge scheduling (to trigger that runtime on a
+> cadence automatically) and a real SNS/email notification channel are the
+> only pieces left. The final polished diagram for submission will be
+> exported as `docs/architecture.png`.
 
 ## Currently implemented
 
@@ -92,6 +95,7 @@ flowchart TD
 | Manual ticket drafting/sync | `scripts/draft_tickets.py` | On-demand: draft tickets for every cluster at/above threshold; `--sync` also creates/updates the Jira issues (requires `JIRA_BASE_URL`/`JIRA_EMAIL`/`JIRA_API_TOKEN`/`JIRA_PROJECT_KEY`, loaded from `.env` via `python-dotenv`) |
 | CLI | `reviewpulse/cli.py` | `--replay` (fixture) entry point, idempotent |
 | Fixture corpus | `tests/fixtures/review_corpus.json` | 2000-review reproducible sample, built by `scripts/capture_fixtures.py` reading the CSV directly (a deliberate one-off full scan, unlike the adapter itself), used by `--replay`, tests, and (later) the demo video |
+| AgentCore deployment | `reviewpulse/agentcore_app.py`, `app.py` (root launcher) | One pipeline tick (ingest → dedupe → triage → cluster grouping → crisis check) wrapped as a `BedrockAgentCoreApp` entrypoint, deployed to a real AgentCore Runtime (`ReviewPulsePipeline`, ARM64/PYTHON_3_13, code-based deployment from an S3 zip) and invoked successfully against real Bedrock. State (SQLite store, CSV cursor) currently lives under `/tmp`, which isn't guaranteed to persist between invocations — fine for proving a real deployed invocation, but a production deployment would need a persistent store (DynamoDB, per the `ReviewStore` protocol) instead |
 
 ### Design notes
 
@@ -107,4 +111,4 @@ flowchart TD
 
 ## Not yet implemented
 
-AWS deployment: EventBridge (real scheduled trigger, replacing `demo_loop.py`'s local polling loop) + AgentCore Runtime (hosting the pipeline), plus a real SNS/email/Slack channel behind `notify_human()` instead of a stderr print. This was always planned last, after the full local pipeline was verified end-to-end — which it now is.
+EventBridge scheduling (a real scheduled trigger invoking the deployed AgentCore Runtime on a cadence, replacing `demo_loop.py`'s local polling loop as the production path), plus a real SNS/email/Slack channel behind `notify_human()` instead of a stderr print. AgentCore Runtime deployment itself — the harder unknown — is done and verified; EventBridge is comparatively mechanical (a scheduled rule invoking `InvokeAgentRuntime`, likely via a small Lambda or an API destination).
