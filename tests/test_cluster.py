@@ -104,6 +104,17 @@ def test_sample_summaries_capped_at_sample_size():
     assert len(clusters[0].sample_summaries) == 5
 
 
+def test_draft_ticket_skips_praise_clusters_without_calling_agent():
+    cluster = build_clusters(
+        [make_row("a", category="praise"), make_row("b", category="praise"), make_row("c", category="praise")],
+        min_size=1,
+    )[0]
+    agent = StubAgent(TicketDraft(title="should never be used", description="..."))
+
+    assert draft_ticket(cluster, agent=agent) is None
+    assert agent.prompts == []
+
+
 def test_draft_ticket_returns_parsed_result():
     cluster = build_clusters([make_row("a"), make_row("b"), make_row("c")], min_size=1)[0]
     agent = StubAgent(TicketDraft(title="Login failures spike", description="Users can't log in."))

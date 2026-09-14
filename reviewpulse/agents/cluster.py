@@ -115,7 +115,18 @@ def draft_ticket(cluster: Cluster, agent=None, model_id: str = REASONING_MODEL_I
     """Draft a ticket title/description for one cluster. Returns None
     (doesn't raise) if the call fails -- one bad draft shouldn't abort a
     run over several clusters.
+
+    A pure-praise cluster is a category error, not a failure: there's no
+    problem to file a ticket about, and asking the model to invent one
+    anyway either produces a nonsense ticket or -- observed in practice --
+    a free-text refusal that breaks structured_output entirely (no tool
+    call for it to parse). Skipped before spending a Bedrock call.
     """
+    if cluster.category == "praise":
+        logger.info("skipping ticket draft for %s/%s: pure praise, nothing to file",
+                     cluster.feature_area, cluster.category)
+        return None
+
     prompt = _build_prompt(cluster)
     try:
         agent = agent or _build_agent(model_id)

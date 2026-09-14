@@ -41,6 +41,13 @@ def parse_row(row: dict) -> RawReview | None:
 
 
 def fetch_reviews(csv_path: Path = DEFAULT_CSV_PATH, *, offset: int = 0, limit: int) -> FetchResult:
+    """Load one bounded chunk of reviews from the CSV -- rows [offset, offset+limit).
+
+    `limit` is required (no "load everything" option): this adapter stands
+    in for a live, incrementally-polled source (see scripts/demo_loop.py),
+    so every call is meant to represent one bounded tick, never a full dump
+    of the file.
+    """
     try:
         with csv_path.open(newline="", encoding="utf-8") as f:
             rows = csv.DictReader(f)
